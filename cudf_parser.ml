@@ -109,22 +109,29 @@ let type_check_stanza ?locs stanza types =
     all extra properties have already been checked for allowance. *)
 let bless_package stanza =
   let p = default_package in	(* assumption: should be completely overrode *)
-  let rec aux p = function
-    | ("package", `Pkgname v) :: tl -> aux { p with package = v } tl
-    | ("version", `Posint v) :: tl -> aux { p with version = v } tl
-    | ("depends", `Vpkgformula v) :: tl -> aux { p with depends = v } tl
-    | ("conflicts", `Vpkglist v) :: tl -> aux { p with conflicts = v } tl
-    | ("provides", `Veqpkglist v) :: tl -> aux { p with provides = v } tl
-    | ("installed", `Bool v) :: tl -> aux { p with installed = v } tl
-    | ("was-installed", `Bool v) :: tl -> aux { p with was_installed = v } tl
+  let rec aux p pkgs_extra = function
+    | ("package", `Pkgname v) :: tl ->
+        aux { p with package = v } pkgs_extra tl
+    | ("version", `Posint v) :: tl ->
+        aux { p with version = v } pkgs_extra tl
+    | ("depends", `Vpkgformula v) :: tl ->
+        aux { p with depends = v } pkgs_extra tl
+    | ("conflicts", `Vpkglist v) :: tl ->
+        aux { p with conflicts = v } pkgs_extra tl
+    | ("provides", `Veqpkglist v) :: tl ->
+        aux { p with provides = v } pkgs_extra tl
+    | ("installed", `Bool v) :: tl ->
+        aux { p with installed = v } pkgs_extra tl
+    | ("was-installed", `Bool v) :: tl ->
+        aux { p with was_installed = v } pkgs_extra tl
     | ("keep", `Enum (_, v)) :: tl ->
-	aux { p with keep = Cudf_types_pp.parse_keep v } tl
+        aux { p with keep = Cudf_types_pp.parse_keep v } pkgs_extra tl
     | (k, (v: typed_value)) :: tl ->
-	aux { p with pkg_extra = (k, v) :: p.pkg_extra } tl
-    | [] -> p
+        aux p ((k, v) :: pkgs_extra) tl
+    | [] -> (p, pkgs_extra)
   in
-  let p' = aux p stanza in
-  { p' with pkg_extra = List.rev p'.pkg_extra }
+  let (p', pkgs_extra) = aux p p.pkg_extra stanza in
+  { p' with pkg_extra = pkgs_extra }
 
 (** Cast a typed stanza starting with "preamble: " to a {!Cudf.preamble}
     ASSUMPTION: as per {!Cudf_parser.bless_package} above. *)
@@ -145,17 +152,21 @@ let bless_preamble stanza =
     ASSUMPTION: as per {!Cudf_parser.bless_package} above. *)
 let bless_request stanza =
   let r = default_request in	(* assumption: should be completely overrode *)
-  let rec aux r = function
-    | ("request", `String v) :: tl -> aux { r with request_id = v } tl
-    | ("install", `Vpkglist v) :: tl -> aux { r with install = v } tl
-    | ("remove", `Vpkglist v) :: tl -> aux { r with remove = v } tl
-    | ("upgrade", `Vpkglist v) :: tl -> aux { r with upgrade = v } tl
+  let rec aux r req_extras = function
+    | ("request", `String v) :: tl ->
+        aux { r with request_id = v }  req_extras tl
+    | ("install", `Vpkglist v) :: tl ->
+        aux { r with install = v }  req_extras tl
+    | ("remove", `Vpkglist v) :: tl ->
+        aux { r with remove = v }  req_extras tl
+    | ("upgrade", `Vpkglist v) :: tl ->
+        aux { r with upgrade = v } req_extras tl
     | (k, (v: typed_value)) :: tl ->
-	aux { r with req_extra = (k, v) :: r.req_extra } tl
-    | [] -> r
+        aux r ((k, v) :: req_extras) tl
+    | [] -> (r, req_extras)
   in
-  let r' = aux r stanza in
-  { r' with req_extra = List.rev r'.req_extra }
+  let (r', req_extra) = aux r r.req_extra stanza in
+  { r' with req_extra = req_extra }
 
 let parse_item' p =
   let locs, stanza =
