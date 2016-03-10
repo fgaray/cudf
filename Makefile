@@ -2,13 +2,6 @@ include Makefile.config
 
 NAME = cudf
 
-ifeq ("$(shell (ocamlc -config 2>/dev/null || ocamlopt -config) | fgrep os_type)","os_type: Win32")
-EXE=.exe
-OCAMLLIBDIR := $(shell cygpath $(OCAMLLIBDIR))
-else
-EXE=
-endif
-
 LIBS = _build/cudf.cma
 LIBS_OPT = _build/cudf.cmxa
 PROGS = _build/main_cudf_check _build/main_cudf_parse_822
@@ -29,9 +22,8 @@ ifeq ($(DESTDIR),)
 INSTALL = $(OCAMLFIND) install
 UNINSTALL = $(OCAMLFIND) remove
 else
-DESTDIR:=$(DESTDIR)/
-INSTALL = $(OCAMLFIND) install -destdir $(DESTDIR)$(OCAMLLIBDIR)
-UNINSTALL = $(OCAMLFIND) remove -destdir $(DESTDIR)$(OCAMLLIBDIR)
+INSTALL = $(OCAMLFIND) install -destdir $(DESTDIR)/$(OCAMLLIBDIR)
+UNINSTALL = $(OCAMLFIND) remove -destdir $(DESTDIR)/$(OCAMLLIBDIR)
 endif
 
 DIST_DIR = $(NAME)-$(VERSION)
@@ -87,17 +79,17 @@ INSTALL_STUFF += $(wildcard _build/cudf_*.cmx _build/cudf_*.o _build/cudf_*.a)
 INSTALL_STUFF += $(wildcard _build/cudf.o _build/cudf.cmx _build/cudf.cmi)
 
 install:
-	test -d $(DESTDIR)$(OCAMLLIBDIR) || mkdir -p $(DESTDIR)$(OCAMLLIBDIR)
+	test -d $(DESTDIR)/$(OCAMLLIBDIR) || mkdir -p $(DESTDIR)/$(OCAMLLIBDIR)
 	$(INSTALL) -patch-version $(VERSION) $(NAME) $(INSTALL_STUFF)
-	test -d $(DESTDIR)$(BINDIR) || mkdir -p $(DESTDIR)$(BINDIR)
+	test -d $(DESTDIR)/$(BINDIR) || mkdir -p $(DESTDIR)/$(BINDIR)
 	for p in $(notdir $(PROGS)) ; do \
-		tgt=`echo $$p | sed -e 's/^main.//' -e 's/_/-/g'`$(EXE) ; \
+		tgt=`echo $$p | sed -e 's/^main.//' -e 's/_/-/g'` ; \
 		if [ -f _build/$$p.native ] ; then \
-			cp _build/$$p.native $(DESTDIR)$(BINDIR)/$$tgt ; \
+			cp _build/$$p.native $(DESTDIR)/$(BINDIR)/$$tgt ; \
 		else \
-			cp _build/$$p.byte $(DESTDIR)$(BINDIR)/$$tgt ; \
+			cp _build/$$p.byte $(DESTDIR)/$(BINDIR)/$$tgt ; \
 		fi ; \
-		echo "Installed $(DESTDIR)$(BINDIR)/$$tgt" ; \
+		echo "Installed $(DESTDIR)/$(BINDIR)/$$tgt" ; \
 	done
 	if [ -f $(C_LIB_DIR)/cudf.o ] ; then \
 		$(MAKE) -C c-lib/ -e install ; \
@@ -106,13 +98,13 @@ install:
 uninstall:
 	$(UNINSTALL) $(NAME)
 	for p in $(notdir $(PROGS)) ; do \
-		tgt=`echo $$p | sed -e 's/^main.//' -e 's/_/-/g'`$(EXE) ; \
-		if [ -f $(DESTDIR)$(BINDIR)/$$tgt ] ; then \
-			rm $(DESTDIR)$(BINDIR)/$$tgt ; \
+		tgt=`echo $$p | sed -e 's/^main.//' -e 's/_/-/g'` ; \
+		if [ -f $(DESTDIR)/$(BINDIR)/$$tgt ] ; then \
+			rm $(DESTDIR)/$(BINDIR)/$$tgt ; \
 		fi ; \
-		echo "Removed $(DESTDIR)$(BINDIR)/$$tgt" ; \
+		echo "Removed $(DESTDIR)/$(BINDIR)/$$tgt" ; \
 	done
-	-rmdir -p $(DESTDIR)$(OCAMLLIBDIR) $(DESTDIR)$(BINDIR)
+	-rmdir -p $(DESTDIR)/$(OCAMLLIBDIR) $(DESTDIR)/$(BINDIR)
 
 dist: ./$(DIST_TARBALL)
 ./$(DIST_TARBALL):
@@ -138,4 +130,3 @@ world: all opt c-lib c-lib-opt doc
 
 .PHONY: all opt world clean top-level headers test tags install uninstall
 .PHONY: dep rpm c-lib c-lib-opt dist doc
-.NOTPARALLEL:
