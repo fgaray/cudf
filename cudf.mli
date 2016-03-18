@@ -87,7 +87,23 @@ type cudf_item =
 exception Constraint_violation of string
 
 (** package universe (including package status, i.e., installed packages) *)
-type universe
+type universe = {
+  id2pkg: ((string * int), package) Hashtbl.t;	(** <name, ver> -> pkg *)
+  name2pkgs: (string, package list ref) Hashtbl.t; (** name -> pkg list ref *)
+  uid2pkgs: (int, package) Hashtbl.t; (** int uid -> pkg *)
+  id2uid: ((pkgname * version), int) Hashtbl.t; (** <name, ver> -> int uid *)
+  features: (string, (package * version option) list ref) Hashtbl.t;
+  (** feature -> avail feature versions
+      Each available feature is reported as a pair 
+      <owner, provided version>, where owner is the package
+      providing it. Provided version "None" means "all possible
+      versions" *)
+  mutable univ_size : int;
+  mutable inst_size : int;
+}
+
+
+
 
 type cudf = preamble * universe * request
 
