@@ -121,6 +121,8 @@ val load_universe : package list -> universe
     alreayd in the given universe *)
 val add_package : universe -> package -> unit
 
+val add_package_aux : universe ->  package -> int -> unit
+
 (** remove a package from an existing universe.
     The universe is modified in place *)
 val remove_package : universe -> pkgname * version -> unit
