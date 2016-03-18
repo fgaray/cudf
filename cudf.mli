@@ -103,8 +103,6 @@ type universe = {
 }
 
 
-
-
 type cudf = preamble * universe * request
 
 (** CUDF-based encoding of solutions, see CUDF 2.0, appendix B
@@ -278,3 +276,5 @@ val version_matches : version -> constr -> bool
 
 (** Same as {!Cudf.version_matches} *)
 val ( |= ) : version -> constr -> bool
+
+val empty_universe : unit -> universe
